@@ -1,39 +1,62 @@
 from datetime import datetime, timedelta
 from apscheduler.schedulers.blocking import BlockingScheduler
-import time
-import os
-# Windows 系统使用
-#from win10toast import ToastNotifier
-#toaster = ToastNotifier()
+import tkinter as tk
+from tkinter import messagebox
 
 # for test
 def test_notification():
     """测试通知功能"""
     print("测试通知开始...")
-    # 测试立即通知
-    notify("这是一条测试通知消息！")
-
-    # 测试定时通知
-    test_scheduler = BlockingScheduler()
-    test_time = datetime.now() + timedelta(seconds=10)  # 设置10秒后触发
-    test_scheduler.add_job(notify, 'date', run_date=test_time,
-                          args=[f"这是一条定时测试通知（设定在 {test_time.strftime('%H:%M:%S')}）"])
-    print(f"已设置在 {test_time.strftime('%H:%M:%S')} 触发定时通知...")
-    print("请等待约10秒钟查看定时通知效果。")
     
     try:
-        test_scheduler.start()
+        # 创建主窗口并隐藏
+        root = tk.Tk()
+        root.withdraw()
+        
+        # 测试立即通知
+        messagebox.showinfo("課程提醒", "这是一条测试通知消息！")
+        
+        # 测试定时通知
+        test_time = datetime.now() + timedelta(seconds=10)  # 设置10秒后触发
+        print(f"已设置在 {test_time.strftime('%H:%M:%S')} 触发定时通知...")
+        print("请等待约10秒钟查看定时通知效果。")
+        
+        def show_delayed_message():
+            try:
+                messagebox.showinfo("課程提醒", f"这是一条定时测试通知（设定在 {test_time.strftime('%H:%M:%S')}）")
+            except Exception as e:
+                print(f"[错误] 发送延时通知失败: {e}")
+            finally:
+                root.quit()
+        
+        # 使用 after 设置延时通知
+        root.after(10000, show_delayed_message)  # 10000毫秒 = 10秒
+        root.mainloop()
+        
+        print("测试完成")
+        
     except (KeyboardInterrupt, SystemExit):
         print("测试被中断")
+    except Exception as e:
+        print(f"[错误] 测试过程发生错误: {e}")
     
 # 定义通知函数，可以根据需要扩展为调用系统通知API
 def notify(message):
     try:
-        os.system(f'''osascript -e 'display notification "{message}" with title "課程提醒"' ''')
-        print(f"[通知发送成功] {message}")
-        # 例如在Linux系统可以使用 os.system("notify-send '{}'".format(message))
-        # 例如在Windowstoaster.show_toast("课程提醒", message, duration=10)
-        # 或者调用其他第三方通知库
+        # 使用 after_idle 确保在主线程中创建和显示窗口
+        def show_message():
+            root = tk.Tk()
+            root.withdraw()
+            messagebox.showinfo("課程提醒", message)
+            root.destroy()
+            print(f"[通知发送成功] {message}")
+        
+        # 创建一个临时的根窗口来运行消息框
+        temp_root = tk.Tk()
+        temp_root.withdraw()
+        temp_root.after_idle(show_message)
+        temp_root.mainloop()
+        
     except Exception as e:
         print(f"[错误] 发送通知失败: {e}")
 
